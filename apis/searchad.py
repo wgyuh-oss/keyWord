@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import time
+from urllib.parse import quote
 
 import requests
 
@@ -52,12 +53,10 @@ def get_related_keywords(hint_keywords, config):
     }
 
     try:
-        resp = requests.get(
-            f"{BASE_URL}/keywordstool",
-            headers=headers,
-            params=params,
-            timeout=30,
-        )
+        # 쉼표가 %2C로 인코딩되면 API가 400 에러를 반환하므로 URL을 직접 구성
+        encoded_kws = ",".join(quote(kw, safe="") for kw in hint_keywords)
+        url = f"{BASE_URL}/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
+        resp = requests.get(url, headers=headers, timeout=30)
         resp.raise_for_status()
         data = resp.json()
     except requests.RequestException as e:

@@ -92,13 +92,12 @@ def searchad_get_related(hint_keywords, config):
         "X-Timestamp": timestamp,
         "X-Signature": signature,
     }
-    params = {"hintKeywords": ",".join(hint_keywords), "showDetail": "1"}
-
     try:
-        resp = requests.get(
-            "https://api.searchad.naver.com/keywordstool",
-            headers=headers, params=params, timeout=30,
-        )
+        # 쉼표가 %2C로 인코딩되면 API가 400 에러를 반환하므로 URL을 직접 구성
+        from urllib.parse import quote
+        encoded_kws = ",".join(quote(kw, safe="") for kw in hint_keywords)
+        url = f"https://api.searchad.naver.com/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
+        resp = requests.get(url, headers=headers, timeout=30)
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:
