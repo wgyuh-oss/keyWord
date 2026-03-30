@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네이버 키워드 채굴기</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, 'Malgun Gothic', '맑은 고딕', sans-serif;
+            background: #0f1117;
+            color: #e1e4e8;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0 30px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #00c73c, #00b4d8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #8b949e;
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #f0f6fc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card h2 .badge {
+            font-size: 0.7rem;
+            background: #238636;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: normal;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full { grid-column: 1 / -1; }
+
+        label {
+            font-size: 0.85rem;
+            color: #8b949e;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="number"], input[type="password"] {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #e1e4e8;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00c73c;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00c73c, #00a832);
+            color: white;
+        }
+
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0, 199, 60, 0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-secondary {
+            background: #21262d;
+            color: #e1e4e8;
+            border: 1px solid #30363d;
+        }
+
+        .btn-secondary:hover { background: #30363d; }
+
+        .mining-controls {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .mining-controls .form-group:first-child { flex: 2; }
+        .mining-controls .form-group:nth-child(2) { flex: 1; }
+
+        /* Progress */
+        .progress-section { display: none; }
+        .progress-section.active { display: block; }
+
+        .progress-bar-container {
+            background: #0d1117;
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00c73c, #00b4d8);
+            border-radius: 8px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-message {
+            font-size: 0.9rem;
+            color: #8b949e;
+        }
+
+        .progress-count {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #00c73c;
+        }
+
+        .status-log {
+            margin-top: 12px;
+            padding: 12px;
+            background: #0d1117;
+            border-radius: 8px;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            color: #8b949e;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .status-log div {
+            padding: 2px 0;
+        }
+
+        /* Results Table */
+        .results-section { display: none; }
+        .results-section.active { display: block; }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .results-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-box .number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00c73c;
+        }
+
+        .stat-box .label {
+            font-size: 0.75rem;
+            color: #8b949e;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        th {
+            background: #0d1117;
+            padding: 12px 14px;
+            text-align: left;
+            color: #8b949e;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+
+        th:hover { color: #e1e4e8; }
+        th.sorted-asc::after { content: " ▲"; color: #00c73c; }
+        th.sorted-desc::after { content: " ▼"; color: #00c73c; }
+
+        td {
+            padding: 10px 14px;
+            border-top: 1px solid #21262d;
+            white-space: nowrap;
+        }
+
+        tr:hover td { background: #1c2129; }
+
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .score-high { color: #00c73c; font-weight: 700; }
+        .score-mid { color: #f0b429; font-weight: 600; }
+        .score-low { color: #8b949e; }
+
+        .comp-high { color: #f85149; }
+        .comp-mid { color: #f0b429; }
+        .comp-low { color: #00c73c; }
+
+        .golden-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f0b429, #f59e0b);
+            color: #000;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .rank-num {
+            color: #484f58;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        /* Config saved indicator */
+        .config-saved {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #00c73c;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .config-saved .dot {
+            width: 8px;
+            height: 8px;
+            background: #00c73c;
+            border-radius: 50%;
+        }
+
+        .config-change-btn {
+            font-size: 0.8rem;
+            color: #8b949e;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-left: auto;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .mining-active {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Search & Filter */
+        .table-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #e1e4e8;
+            font-size: 0.9rem;
+        }
+
+        .search-input:focus { outline: none; border-color: #00c73c; }
+
+        .table-scroll {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .table-scroll::-webkit-scrollbar { width: 6px; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #238636;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .mining-controls { flex-direction: column; }
+            .results-stats { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>네이버 키워드 채굴기</h1>
+            <p>시드 키워드 하나로 수천~수만 개 황금 키워드를 자동 발굴합니다</p>
+        </header>
+
+        <!-- API Key Setup -->
+        <div class="card" id="configCard">
+            <h2>API 키 설정 <span class="badge" id="configBadge">미설정</span></h2>
+
+            <div id="configSaved" class="config-saved" style="display:none;">
+                <span class="dot"></span> API 키가 저장되어 있습니다
+                <button class="config-change-btn" onclick="showConfigForm()">변경</button>
+            </div>
+
+            <div id="configForm">
+                <p style="color:#8b949e; font-size:0.85rem; margin-bottom:16px;">
+                    네이버 검색광고 API와 네이버 검색 API 키를 입력해주세요. 한 번만 입력하면 자동 저장됩니다.
+                </p>
+
+                <h3 style="font-size:0.95rem; color:#f0f6fc; margin-bottom:12px;">검색광고 API (키워드 검색량)</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Customer ID</label>
+                        <input type="text" id="customerId" placeholder="검색광고 고객 ID">
+                    </div>
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="text" id="adApiKey" placeholder="API 라이선스 키">
+                    </div>
+                    <div class="form-group full">
+                        <label>Secret Key</label>
+                        <input type="password" id="adSecretKey" placeholder="비밀 키">
+                    </div>
+                </div>
+
+                <h3 style="font-size:0.95rem; color:#f0f6fc; margin:20px 0 12px;">네이버 검색 API (블로그 문서수)</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Client ID</label>
+                        <input type="text" id="searchClientId" placeholder="애플리케이션 Client ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Secret</label>
+                        <input type="password" id="searchClientSecret" placeholder="Client Secret">
+                    </div>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <button class="btn btn-primary" onclick="saveConfig()">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Keyword Mining -->
+        <div class="card" id="miningCard">
+            <h2>키워드 발굴</h2>
+            <div class="mining-controls">
+                <div class="form-group">
+                    <label>시드 키워드</label>
+                    <input type="text" id="seedKeyword" placeholder="예: 다이어트, 부동산, 주식투자..."
+                           onkeydown="if(event.key==='Enter') startMining()">
+                </div>
+                <div class="form-group">
+                    <label>수집 목표 개수</label>
+                    <input type="number" id="targetCount" value="500" min="10" max="50000">
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" id="startBtn" onclick="startMining()">
+                        키워드 발굴 시작
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="card progress-section" id="progressSection">
+            <h2 id="progressTitle" class="mining-active">키워드 채굴 중...</h2>
+            <div class="progress-info">
+                <span class="progress-message" id="progressMessage">준비 중...</span>
+                <span class="progress-count" id="progressCount">0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="status-log" id="statusLog"></div>
+        </div>
+
+        <!-- Results -->
+        <div class="card results-section" id="resultsSection">
+            <div class="results-header">
+                <h2>발굴 결과</h2>
+                <div class="results-stats">
+                    <div class="stat-box">
+                        <div class="number" id="statTotal">0</div>
+                        <div class="label">총 키워드</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="number" id="statGolden">0</div>
+                        <div class="label">황금 키워드</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="downloadBtn" onclick="downloadCSV()">
+                    CSV 다운로드
+                </button>
+            </div>
+
+            <div class="table-controls">
+                <input type="text" class="search-input" id="tableSearch"
+                       placeholder="키워드 검색..." oninput="filterTable()">
+            </div>
+
+            <div class="table-wrapper">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px;">#</th>
+                                <th onclick="sortTable('keyword')">키워드</th>
+                                <th onclick="sortTable('pc_volume')" class="num">PC검색량</th>
+                                <th onclick="sortTable('mobile_volume')" class="num">모바일검색량</th>
+                                <th onclick="sortTable('total_volume')" class="num">총검색량</th>
+                                <th onclick="sortTable('blog_doc_count')" class="num">블로그문서수</th>
+                                <th onclick="sortTable('comp_idx')">경쟁도</th>
+                                <th onclick="sortTable('golden_score')" class="num">황금점수</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let allResults = [];
+        let csvFilename = '';
+        let currentSort = { key: 'golden_score', dir: 'desc' };
+
+        // 초기 로드: API 키 상태 확인
+        document.addEventListener('DOMContentLoaded', async () => {
+            const resp = await fetch('/api/config/status');
+            const data = await resp.json();
+            if (data.configured) {
+                document.getElementById('configForm').style.display = 'none';
+                document.getElementById('configSaved').style.display = 'flex';
+                document.getElementById('configBadge').textContent = '설정완료';
+                document.getElementById('configBadge').style.background = '#00c73c';
+            }
+        });
+
+        function showConfigForm() {
+            document.getElementById('configForm').style.display = 'block';
+            document.getElementById('configSaved').style.display = 'none';
+        }
+
+        async function saveConfig() {
+            const data = {
+                searchad: {
+                    customer_id: document.getElementById('customerId').value.trim(),
+                    api_key: document.getElementById('adApiKey').value.trim(),
+                    secret_key: document.getElementById('adSecretKey').value.trim(),
+                },
+                search: {
+                    client_id: document.getElementById('searchClientId').value.trim(),
+                    client_secret: document.getElementById('searchClientSecret').value.trim(),
+                }
+            };
+
+            const resp = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const result = await resp.json();
+
+            if (result.success) {
+                document.getElementById('configForm').style.display = 'none';
+                document.getElementById('configSaved').style.display = 'flex';
+                document.getElementById('configBadge').textContent = '설정완료';
+                document.getElementById('configBadge').style.background = '#00c73c';
+                showToast('API 키가 저장되었습니다!');
+            } else {
+                showToast(result.message, true);
+            }
+        }
+
+        function startMining() {
+            const seed = document.getElementById('seedKeyword').value.trim();
+            const count = document.getElementById('targetCount').value;
+
+            if (!seed) {
+                showToast('키워드를 입력해주세요.', true);
+                return;
+            }
+
+            // UI 업데이트
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('startBtn').textContent = '채굴 중...';
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('resultsSection').classList.remove('active');
+            document.getElementById('statusLog').innerHTML = '';
+            allResults = [];
+
+            // SSE 연결
+            const params = new URLSearchParams({ seed, count });
+            const evtSource = new EventSource(`/api/discover?${params}`);
+
+            evtSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                switch (data.type) {
+                    case 'progress':
+                        updateProgress(data);
+                        break;
+
+                    case 'status':
+                        addLog(data.message);
+                        document.getElementById('progressMessage').textContent = data.message;
+                        break;
+
+                    case 'warning':
+                        addLog(`⚠ ${data.message}`);
+                        break;
+
+                    case 'complete':
+                        evtSource.close();
+                        onComplete(data);
+                        break;
+                }
+            };
+
+            evtSource.onerror = () => {
+                evtSource.close();
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('startBtn').textContent = '키워드 발굴 시작';
+                addLog('연결이 종료되었습니다.');
+            };
+        }
+
+        function updateProgress(data) {
+            const target = data.target || 1;
+            let current, percent;
+
+            if (data.phase === 'collecting') {
+                current = data.found;
+                percent = Math.min((current / target) * 100, 100);
+            } else if (data.phase === 'analyzing') {
+                current = data.analyzed;
+                percent = Math.min((current / target) * 100, 100);
+            }
+
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressMessage').textContent = data.message;
+            document.getElementById('progressCount').textContent =
+                data.found ? data.found.toLocaleString() : '0';
+        }
+
+        function addLog(message) {
+            const log = document.getElementById('statusLog');
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString('ko-KR');
+            div.textContent = `[${time}] ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function onComplete(data) {
+            allResults = data.results || [];
+            csvFilename = data.csv_file;
+
+            // 진행 상태 업데이트
+            document.getElementById('progressTitle').textContent = '채굴 완료!';
+            document.getElementById('progressTitle').classList.remove('mining-active');
+            document.getElementById('progressBar').style.width = '100%';
+            document.getElementById('progressMessage').textContent = data.message;
+
+            // 버튼 복원
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').textContent = '키워드 발굴 시작';
+
+            // 결과 표시
+            document.getElementById('resultsSection').classList.add('active');
+            document.getElementById('statTotal').textContent = data.total.toLocaleString();
+
+            // 황금 키워드 개수 (점수 상위 10%)
+            const goldenCount = Math.ceil(allResults.length * 0.1);
+            document.getElementById('statGolden').textContent = goldenCount.toLocaleString();
+
+            renderTable(allResults);
+            showToast(`${data.total.toLocaleString()}개 키워드 발굴 완료!`);
+            addLog(data.message);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('resultsBody');
+            const goldenThreshold = data.length > 0
+                ? data[Math.ceil(data.length * 0.1) - 1]?.golden_score || 0
+                : 0;
+
+            tbody.innerHTML = data.map((item, i) => {
+                const scoreClass = item.golden_score >= goldenThreshold
+                    ? 'score-high' : item.golden_score > 0.1 ? 'score-mid' : 'score-low';
+                const compClass = item.comp_idx === '높음'
+                    ? 'comp-high' : item.comp_idx === '낮음' ? 'comp-low' : 'comp-mid';
+                const goldenBadge = item.golden_score >= goldenThreshold
+                    ? '<span class="golden-badge">GOLDEN</span>' : '';
+
+                return `<tr>
+                    <td class="rank-num">${i + 1}</td>
+                    <td>${escapeHtml(item.keyword)}${goldenBadge}</td>
+                    <td class="num">${item.pc_volume.toLocaleString()}</td>
+                    <td class="num">${item.mobile_volume.toLocaleString()}</td>
+                    <td class="num"><strong>${item.total_volume.toLocaleString()}</strong></td>
+                    <td class="num">${item.blog_doc_count.toLocaleString()}</td>
+                    <td class="${compClass}">${item.comp_idx}</td>
+                    <td class="num ${scoreClass}">${item.golden_score.toFixed(4)}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function sortTable(key) {
+            // 같은 컬럼 클릭 시 방향 토글
+            if (currentSort.key === key) {
+                currentSort.dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
+            } else {
+                currentSort.key = key;
+                currentSort.dir = key === 'keyword' ? 'asc' : 'desc';
+            }
+
+            allResults.sort((a, b) => {
+                let va = a[key], vb = b[key];
+                if (typeof va === 'string') {
+                    return currentSort.dir === 'asc'
+                        ? va.localeCompare(vb, 'ko')
+                        : vb.localeCompare(va, 'ko');
+                }
+                return currentSort.dir === 'asc' ? va - vb : vb - va;
+            });
+
+            // 헤더 표시 업데이트
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            event.target.classList.add(
+                currentSort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc'
+            );
+
+            renderTable(allResults);
+        }
+
+        function filterTable() {
+            const query = document.getElementById('tableSearch').value.trim().toLowerCase();
+            if (!query) {
+                renderTable(allResults);
+                return;
+            }
+            const filtered = allResults.filter(item =>
+                item.keyword.toLowerCase().includes(query)
+            );
+            renderTable(filtered);
+        }
+
+        function downloadCSV() {
+            if (csvFilename) {
+                window.location.href = `/api/download/${csvFilename}`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = isError ? '#da3633' : '#238636';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
