@@ -93,15 +93,23 @@ def searchad_get_related(hint_keywords, config):
         "X-Signature": signature,
     }
     try:
-        # 쉼표가 %2C로 인코딩되면 API가 400 에러를 반환하므로 URL을 직접 구성
-        from urllib.parse import quote
-        encoded_kws = ",".join(quote(kw, safe="") for kw in hint_keywords)
-        url = f"https://api.searchad.naver.com/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
-        resp = requests.get(url, headers=headers, timeout=30)
+        # requests의 params는 쉼표를 %2C로 인코딩하므로 PreparedRequest로 제어
+        req = requests.Request(
+            "GET",
+            "https://api.searchad.naver.com/keywordstool",
+            headers=headers,
+            params={"hintKeywords": ",".join(hint_keywords), "showDetail": "1"},
+        )
+        prepared = req.prepare()
+        prepared.url = prepared.url.replace("%2C", ",")
+        resp = requests.Session().send(prepared, timeout=30)
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:
-        st.warning(f"검색광고 API 오류: {e}")
+        body = ""
+        if hasattr(e, "response") and e.response is not None:
+            body = e.response.text[:200]
+        st.warning(f"검색광고 API 오류: {e} | {body}")
         return []
 
     results = []

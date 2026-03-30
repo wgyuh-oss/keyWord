@@ -2,7 +2,6 @@ import base64
 import hashlib
 import hmac
 import time
-from urllib.parse import quote
 
 import requests
 
@@ -53,14 +52,23 @@ def get_related_keywords(hint_keywords, config):
     }
 
     try:
-        # 쉼표가 %2C로 인코딩되면 API가 400 에러를 반환하므로 URL을 직접 구성
-        encoded_kws = ",".join(quote(kw, safe="") for kw in hint_keywords)
-        url = f"{BASE_URL}/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
-        resp = requests.get(url, headers=headers, timeout=30)
+        # requests의 params는 쉼표를 %2C로 인코딩하므로 PreparedRequest로 제어
+        req = requests.Request(
+            "GET",
+            f"{BASE_URL}/keywordstool",
+            headers=headers,
+            params={"hintKeywords": ",".join(hint_keywords), "showDetail": "1"},
+        )
+        prepared = req.prepare()
+        prepared.url = prepared.url.replace("%2C", ",")
+        resp = requests.Session().send(prepared, timeout=30)
         resp.raise_for_status()
         data = resp.json()
     except requests.RequestException as e:
-        print(f"[SearchAd API 오류] {e}")
+        body = ""
+        if hasattr(e, "response") and e.response is not None:
+            body = e.response.text[:200]
+        print(f"[SearchAd API 오류] {e} | {body}")
         return []
 
     results = []
