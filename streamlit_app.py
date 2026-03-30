@@ -93,15 +93,12 @@ def searchad_get_related(hint_keywords, config):
         "X-Signature": signature,
     }
     try:
-        # requests의 params는 쉼표를 %2C로 인코딩하므로 PreparedRequest로 제어
-        req = requests.Request(
-            "GET",
-            "https://api.searchad.naver.com/keywordstool",
-            headers=headers,
-            params={"hintKeywords": ",".join(hint_keywords), "showDetail": "1"},
-        )
+        from urllib.parse import quote
+        encoded_kws = quote(",".join(hint_keywords), safe=",")
+        url = f"https://api.searchad.naver.com/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
+        req = requests.Request("GET", url, headers=headers)
         prepared = req.prepare()
-        prepared.url = prepared.url.replace("%2C", ",")
+        prepared.url = url  # requests의 재인코딩 방지
         resp = requests.Session().send(prepared, timeout=30)
         resp.raise_for_status()
         data = resp.json()

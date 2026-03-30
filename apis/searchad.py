@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import time
+from urllib.parse import quote
 
 import requests
 
@@ -52,15 +53,13 @@ def get_related_keywords(hint_keywords, config):
     }
 
     try:
-        # requests의 params는 쉼표를 %2C로 인코딩하므로 PreparedRequest로 제어
-        req = requests.Request(
-            "GET",
-            f"{BASE_URL}/keywordstool",
-            headers=headers,
-            params={"hintKeywords": ",".join(hint_keywords), "showDetail": "1"},
-        )
+        # requests의 params는 쉼표를 %2C, 공백을 +로 인코딩하여 네이버 API가 거부함
+        # quote(safe=",")로 쉼표는 유지, 공백은 %20으로 인코딩
+        encoded_kws = quote(",".join(hint_keywords), safe=",")
+        url = f"{BASE_URL}/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
+        req = requests.Request("GET", url, headers=headers)
         prepared = req.prepare()
-        prepared.url = prepared.url.replace("%2C", ",")
+        prepared.url = url  # requests의 재인코딩 방지
         resp = requests.Session().send(prepared, timeout=30)
         resp.raise_for_status()
         data = resp.json()
