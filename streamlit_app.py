@@ -93,13 +93,14 @@ def searchad_get_related(hint_keywords, config):
         "X-Signature": signature,
     }
     try:
-        from urllib.parse import quote
-        encoded_kws = quote(",".join(hint_keywords), safe=",")
-        url = f"https://api.searchad.naver.com/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
-        req = requests.Request("GET", url, headers=headers)
-        prepared = req.prepare()
-        prepared.url = url  # requests의 재인코딩 방지
-        resp = requests.Session().send(prepared, timeout=30)
+        params = {
+            "hintKeywords": "\n".join(hint_keywords),
+            "showDetail": "1",
+        }
+        resp = requests.get(
+            "https://api.searchad.naver.com/keywordstool",
+            headers=headers, params=params, timeout=30,
+        )
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:
