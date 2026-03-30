@@ -481,6 +481,10 @@ if start_clicked and seed_keyword and api_ready:
     add_log(f"총 {total_kw:,}개 키워드 발굴 완료!")
 
     # ── DataFrame 생성 ──
+    if not keyword_data:
+        st.error("수집된 키워드가 없습니다. API 키 설정을 확인해주세요.")
+        st.stop()
+
     df = pd.DataFrame(keyword_data.values())
     df = df.sort_values("golden_score", ascending=False).reset_index(drop=True)
     df.index += 1
