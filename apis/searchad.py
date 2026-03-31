@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import time
+from urllib.parse import quote
 
 import requests
 
@@ -46,15 +47,11 @@ def _parse_volume(val):
 def get_related_keywords(hint_keywords, config):
     """네이버 검색광고 API로 관련 키워드 + 검색량 조회"""
     headers = _make_headers(config)
-    params = {
-        "hintKeywords": "\n".join(hint_keywords),
-        "showDetail": "1",
-    }
 
     try:
-        resp = requests.get(
-            f"{BASE_URL}/keywordstool", headers=headers, params=params, timeout=30
-        )
+        encoded_kws = ",".join(quote(kw, safe="") for kw in hint_keywords)
+        url = f"{BASE_URL}/keywordstool?hintKeywords={encoded_kws}&showDetail=1"
+        resp = requests.get(url, headers=headers, timeout=30)
         resp.raise_for_status()
         data = resp.json()
     except requests.RequestException as e:
