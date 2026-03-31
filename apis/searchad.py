@@ -47,7 +47,7 @@ def get_related_keywords(hint_keywords, config):
     """네이버 검색광고 API로 관련 키워드 + 검색량 조회"""
     headers = _make_headers(config)
     params = {
-        "hintKeywords": ",".join(hint_keywords),
+        "hintKeywords": "\n".join(hint_keywords),
         "showDetail": "1",
     }
 
