@@ -13,6 +13,8 @@
 
 ## 실행 방법 (로컬)
 
+### 최초 설치
+
 **Mac/Linux:**
 ```bash
 git clone https://github.com/wgyuh-oss/keyWord.git && cd keyWord && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python app.py
@@ -21,6 +23,18 @@ git clone https://github.com/wgyuh-oss/keyWord.git && cd keyWord && python -m ve
 **Windows:**
 ```bash
 git clone https://github.com/wgyuh-oss/keyWord.git && cd keyWord && python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt && python app.py
+```
+
+### 이후 실행
+
+**Mac/Linux:**
+```bash
+cd keyWord && source .venv/bin/activate && python app.py
+```
+
+**Windows:**
+```bash
+cd keyWord && .venv\Scripts\activate && python app.py
 ```
 
 브라우저에서 http://localhost:5000 접속 후 API 키를 입력하면 바로 사용 가능합니다.
