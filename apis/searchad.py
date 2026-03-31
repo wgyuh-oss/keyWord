@@ -52,10 +52,6 @@ def get_related_keywords(hint_keywords, config):
     }
 
     try:
-        params = {
-            "hintKeywords": "\n".join(hint_keywords),
-            "showDetail": "1",
-        }
         resp = requests.get(
             f"{BASE_URL}/keywordstool", headers=headers, params=params, timeout=30
         )
