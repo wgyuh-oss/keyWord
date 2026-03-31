@@ -13,21 +13,14 @@
 
 ## 실행 방법 (로컬)
 
+**Mac/Linux:**
 ```bash
-# 1. 저장소 클론
-git clone https://github.com/wgyuh-oss/keyWord.git
-cd keyWord
+git clone https://github.com/wgyuh-oss/keyWord.git && cd keyWord && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python app.py
+```
 
-# 2. 가상환경 생성 및 활성화
-python -m venv .venv
-source .venv/bin/activate        # Mac/Linux
-# .venv\Scripts\activate         # Windows
-
-# 3. 패키지 설치
-pip install -r requirements.txt
-
-# 4. Flask 서버 실행
-python app.py
+**Windows:**
+```bash
+git clone https://github.com/wgyuh-oss/keyWord.git && cd keyWord && python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt && python app.py
 ```
 
 브라우저에서 http://localhost:5000 접속 후 API 키를 입력하면 바로 사용 가능합니다.
